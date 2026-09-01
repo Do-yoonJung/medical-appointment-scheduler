@@ -67,6 +67,52 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.post('/signup', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all fields.'
+      });
+    }
+
+    const existingUser = await User.findOne({ email: email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already registered.'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      name: name,
+      email: email,
+      password: hashedPassword,
+      role: 'patient'
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Account created successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
 app.post('/appointments', async (req, res) => {
   try {
     if (!req.session.userId || req.session.role !== 'patient') {
