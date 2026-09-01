@@ -190,7 +190,7 @@ app.post('/appointments', async (req, res) => {
 
     // Check if the patient already has an appointment at this time
     const patientConflict = await Appointment.findOne({
-      patient: patientId,
+      patient: req.session.userId,
       date: date,
       time: time,
       status: { $ne: 'Cancelled' }
@@ -537,7 +537,7 @@ app.post('/appointments/receptionist', async (req, res) => {
     }
 
     const patientConflict = await Appointment.findOne({
-      patient: req.session.userId,
+      patient: patientId,
       date: date,
       time: time,
       status: { $ne: 'Cancelled' }
