@@ -177,7 +177,8 @@ app.post('/appointments', async (req, res) => {
     const existingAppointment = await Appointment.findOne({
       doctor: doctor,
       date: date,
-      time: time
+      time: time,
+      status: { $ne: 'Cancelled' }
     });
 
     if (existingAppointment) {
@@ -189,9 +190,10 @@ app.post('/appointments', async (req, res) => {
 
     // Check if the patient already has an appointment at this time
     const patientConflict = await Appointment.findOne({
-      patient: req.session.userId,
+      patient: patientId,
       date: date,
-      time: time
+      time: time,
+      status: { $ne: 'Cancelled' }
     });
 
     if (patientConflict) {
@@ -254,6 +256,144 @@ app.get('/appointments/my', async (req, res) => {
   }
 });
 
+app.get('/appointments/my/:id', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'patient') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointment = await Appointment.findOne({
+      _id: req.params.id,
+      patient: req.session.userId
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    res.json({
+      success: true,
+      appointment: appointment
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.put('/appointments/:id', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'patient') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const { doctor, date, time } = req.body;
+
+    if (!doctor || !date || !time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all appointment fields.'
+      });
+    }
+
+    const appointment = await Appointment.findOne({
+      _id: req.params.id,
+      patient: req.session.userId
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    if (appointment.status === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancelled appointments cannot be edited.'
+      });
+    }
+
+    const selectedDate = new Date(date + 'T00:00:00');
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a future date.'
+      });
+    }
+
+    // 다른 예약 중 같은 의사의 동일 시간 확인
+    const doctorConflict = await Appointment.findOne({
+      _id: { $ne: appointment._id },
+      doctor: doctor,
+      date: date,
+      time: time,
+      status: { $ne: 'Cancelled' }
+    });
+
+    if (doctorConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment time is already booked.'
+      });
+    }
+
+    // 본인의 다른 예약과 동일 시간인지 확인
+    const patientConflict = await Appointment.findOne({
+      _id: { $ne: appointment._id },
+      patient: req.session.userId,
+      date: date,
+      time: time,
+      status: { $ne: 'Cancelled' }
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an appointment at this time.'
+      });
+    }
+
+    appointment.doctor = doctor;
+    appointment.date = date;
+    appointment.time = time;
+
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment updated successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
 app.get('/appointments', async (req, res) => {
   try {
     if (!req.session.userId || req.session.role !== 'receptionist') {
@@ -269,6 +409,45 @@ app.get('/appointments', async (req, res) => {
     res.json({
       success: true,
       appointments: appointments
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.put('/appointments/:id/cancel', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'patient') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointment = await Appointment.findOne({
+      _id: req.params.id,
+      patient: req.session.userId
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    appointment.status = 'Cancelled';
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment cancelled successfully.'
     });
 
   } catch (error) {
@@ -346,7 +525,8 @@ app.post('/appointments/receptionist', async (req, res) => {
     const existingAppointment = await Appointment.findOne({
       doctor: doctor,
       date: date,
-      time: time
+      time: time,
+      status: { $ne: 'Cancelled' }
     });
 
     if (existingAppointment) {
@@ -357,9 +537,10 @@ app.post('/appointments/receptionist', async (req, res) => {
     }
 
     const patientConflict = await Appointment.findOne({
-      patient: patientId,
+      patient: req.session.userId,
       date: date,
-      time: time
+      time: time,
+      status: { $ne: 'Cancelled' }
     });
 
     if (patientConflict) {
@@ -382,6 +563,180 @@ app.post('/appointments/receptionist', async (req, res) => {
     res.json({
       success: true,
       message: 'Appointment created successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.get('/appointments/:id', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('patient', 'name email');
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    res.json({
+      success: true,
+      appointment: appointment
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.put('/appointments/receptionist/:id', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const { doctor, date, time } = req.body;
+
+    if (!doctor || !date || !time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all appointment fields.'
+      });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    if (appointment.status === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancelled appointments cannot be edited.'
+      });
+    }
+
+    const selectedDate = new Date(date + 'T00:00:00');
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a future date.'
+      });
+    }
+
+    const doctorConflict = await Appointment.findOne({
+      _id: { $ne: appointment._id },
+      doctor: doctor,
+      date: date,
+      time: time,
+      status: { $ne: 'Cancelled' }
+    });
+
+    if (doctorConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment time is already booked.'
+      });
+    }
+
+    const patientConflict = await Appointment.findOne({
+      _id: { $ne: appointment._id },
+      patient: appointment.patient,
+      date: date,
+      time: time,
+      status: { $ne: 'Cancelled' }
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'This patient already has an appointment at this time.'
+      });
+    }
+
+    appointment.doctor = doctor;
+    appointment.date = date;
+    appointment.time = time;
+
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment updated successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.put('/appointments/receptionist/:id/cancel', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found.'
+      });
+    }
+
+    if (appointment.status === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Appointment is already cancelled.'
+      });
+    }
+
+    appointment.status = 'Cancelled';
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment cancelled successfully.'
     });
 
   } catch (error) {

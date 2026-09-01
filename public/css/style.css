@@ -209,3 +209,24 @@ select:focus {
     font-size: 14px;
     margin-bottom: 12px;
 }
+
+.cancel-button {
+    width: auto;
+    margin-top: 12px;
+    padding: 10px 18px;
+    background-color: #FFFFFF;
+    color: #DC2626;
+    border: 1px solid #DC2626;
+}
+
+.edit-button {
+    display: inline-block;
+    margin-top: 12px;
+    margin-right: 10px;
+    padding: 10px 18px;
+    background-color: #2563EB;
+    color: #FFFFFF;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+}

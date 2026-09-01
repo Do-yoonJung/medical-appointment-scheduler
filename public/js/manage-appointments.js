@@ -32,10 +32,52 @@ async function loadAppointments() {
             <p><strong>Date:</strong> ${appointment.date}</p>
             <p><strong>Time:</strong> ${appointment.time}</p>
             <p><strong>Status:</strong> ${appointment.status}</p>
+            ${
+                appointment.status !== 'Cancelled'
+                ? `
+                    <a
+                        class="edit-button"
+                        href="/receptionist-edit-appointment.html?id=${appointment._id}">
+                        Edit Appointment
+                    </a>
+
+                    <button
+                        class="cancel-button"
+                        onclick="cancelAppointment('${appointment._id}')">
+                        Cancel Appointment
+                    </button>
+                  `
+                : ''
+            }
         `;
 
         appointmentList.appendChild(card);
     });
+}
+
+async function cancelAppointment(id) {
+    const confirmed = confirm(
+        'Are you sure you want to cancel this appointment?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const response = await fetch(
+        `/appointments/receptionist/${id}/cancel`,
+        {
+            method: 'PUT'
+        }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+        loadAppointments();
+    } else {
+        alert(data.message);
+    }
 }
 
 loadAppointments();
