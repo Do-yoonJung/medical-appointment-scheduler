@@ -187,6 +187,20 @@ app.post('/appointments', async (req, res) => {
       });
     }
 
+    // Check if the patient already has an appointment at this time
+    const patientConflict = await Appointment.findOne({
+      patient: req.session.userId,
+      date: date,
+      time: time
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an appointment at this time.'
+      });
+    }
+
     const appointment = new Appointment({
       patient: req.session.userId,
       doctor: doctor,
@@ -339,6 +353,19 @@ app.post('/appointments/receptionist', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'This appointment time is already booked.'
+      });
+    }
+
+    const patientConflict = await Appointment.findOne({
+      patient: patientId,
+      date: date,
+      time: time
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'This patient already has an appointment at this time.'
       });
     }
 
