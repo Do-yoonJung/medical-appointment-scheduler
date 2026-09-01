@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Medical Appointment Scheduler</h1>
+        <div class="header-right">
+            <span>Patient</span>
+            <button class="logout-button" onclick="window.location.href='/'">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <h2>Patient Dashboard</h2>
+        <p class="description">Manage your medical appointments.</p>
+
+        <div class="dashboard-cards">
+
+            <div class="dashboard-card">
+                <h3>Book Appointment</h3>
+                <p>Schedule a new appointment with a doctor.</p>
+                <a href="/book-appointment.html">Book Appointment</a>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>My Appointments</h3>
+                <p>View your upcoming appointments.</p>
+                <a href="/my-appointments.html">My Appointments</a>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
