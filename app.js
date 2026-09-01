@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const dns = require('dns');
 
 const User = require('./models/User');
+const Appointment = require('./models/Appointment');
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
@@ -54,6 +55,77 @@ app.post('/login', async (req, res) => {
     res.json({
       success: true,
       role: user.role
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.post('/appointments', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'patient') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const { doctor, date, time } = req.body;
+
+    if (!doctor || !date || !time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all appointment fields.'
+      });
+    }
+
+    const appointment = new Appointment({
+      patient: req.session.userId,
+      doctor: doctor,
+      date: date,
+      time: time,
+      status: 'Confirmed'
+    });
+
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment booked successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.get('/appointments/my', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'patient') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointments = await Appointment.find({
+      patient: req.session.userId
+    });
+
+    res.json({
+      success: true,
+      appointments: appointments
     });
 
   } catch (error) {
