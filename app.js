@@ -138,6 +138,105 @@ app.get('/appointments/my', async (req, res) => {
   }
 });
 
+app.get('/appointments', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const appointments = await Appointment.find()
+      .populate('patient', 'name email');
+
+    res.json({
+      success: true,
+      appointments: appointments
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.get('/patients', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const patients = await User.find(
+      { role: 'patient' },
+      'name email'
+    );
+
+    res.json({
+      success: true,
+      patients: patients
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
+app.post('/appointments/receptionist', async (req, res) => {
+  try {
+    if (!req.session.userId || req.session.role !== 'receptionist') {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized.'
+      });
+    }
+
+    const { patientId, doctor, date, time } = req.body;
+
+    if (!patientId || !doctor || !date || !time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all appointment fields.'
+      });
+    }
+
+    const appointment = new Appointment({
+      patient: patientId,
+      doctor: doctor,
+      date: date,
+      time: time,
+      status: 'Confirmed'
+    });
+
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment created successfully.'
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error.'
+    });
+  }
+});
+
 const PORT = 3000;
 
 mongoose.connect(process.env.MONGODB_URI)

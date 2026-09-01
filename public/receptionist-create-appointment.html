@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Appointment</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header>
+    <h1>Medical Appointment Scheduler</h1>
+
+    <div class="header-right">
+        <span>Receptionist</span>
+        <button class="logout-button" onclick="window.location.href='/'">
+            Logout
+        </button>
+    </div>
+</header>
+
+<main class="appointment-container">
+    <h2>Create Appointment</h2>
+    <p class="description">Schedule an appointment for a patient.</p>
+
+    <form id="receptionistAppointmentForm">
+
+        <div class="form-group">
+            <label for="patient">Patient</label>
+            <select id="patient" required>
+                <option value="">Select Patient</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="doctor">Doctor</label>
+            <select id="doctor" required>
+                <option value="">Select Doctor</option>
+                <option value="Dr. Sarah Lee">Dr. Sarah Lee</option>
+                <option value="Dr. James Wilson">Dr. James Wilson</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <div class="form-group">
+            <label for="time">Time</label>
+            <select id="time" required>
+                <option value="">Select Time</option>
+                <option value="09:00">9:00 AM</option>
+                <option value="10:00">10:00 AM</option>
+                <option value="11:00">11:00 AM</option>
+                <option value="14:00">2:00 PM</option>
+            </select>
+        </div>
+
+        <p id="appointmentError" class="error-message"></p>
+
+        <button type="submit">Create Appointment</button>
+
+        <button
+            type="button"
+            class="secondary-button"
+            onclick="window.location.href='/receptionist-dashboard.html'">
+            Back
+        </button>
+
+    </form>
+</main>
+
+<script src="/js/receptionist-create-appointment.js"></script>
+
+</body>
+</html>
