@@ -13,7 +13,7 @@
 
         <div class="header-right">
             <span>Patient</span>
-            <button class="logout-button" onclick="window.location.href='/'">
+            <button class="logout-button" onclick="logout()">
                 Logout
             </button>
         </div>
@@ -65,5 +65,7 @@
     </main>
 
     <script src="/js/book-appointment.js"></script>
+    <script src="/js/logout.js"></script>
+    <script>checkAuth('patient');</script>
 </body>
 </html>

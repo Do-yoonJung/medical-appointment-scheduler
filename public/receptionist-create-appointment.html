@@ -13,7 +13,7 @@
 
     <div class="header-right">
         <span>Receptionist</span>
-        <button class="logout-button" onclick="window.location.href='/'">
+        <button class="logout-button" onclick="logout()">
             Logout
         </button>
     </div>
@@ -72,6 +72,8 @@
 </main>
 
 <script src="/js/receptionist-create-appointment.js"></script>
+<script src="/js/logout.js"></script>
+<script>checkAuth('receptionist');</script>
 
 </body>
 </html>

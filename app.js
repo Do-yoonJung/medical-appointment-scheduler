@@ -23,6 +23,19 @@ app.use(
   })
 );
 
+app.get('/session', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({
+      success: false
+    });
+  }
+
+  res.json({
+    success: true,
+    role: req.session.role
+  });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/login.html');
 });
@@ -65,6 +78,21 @@ app.post('/login', async (req, res) => {
       message: 'Server error.'
     });
   }
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Logout failed.'
+      });
+    }
+
+    res.json({
+      success: true
+    });
+  });
 });
 
 app.post('/signup', async (req, res) => {
@@ -124,10 +152,38 @@ app.post('/appointments', async (req, res) => {
 
     const { doctor, date, time } = req.body;
 
+    // Check required fields
     if (!doctor || !date || !time) {
       return res.status(400).json({
         success: false,
         message: 'Please complete all appointment fields.'
+      });
+    }
+
+    // Check if the selected date is in the past
+    const selectedDate = new Date(date + 'T00:00:00');
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a future date.'
+      });
+    }
+
+    // Check if doctor already has an appointment at this time
+    const existingAppointment = await Appointment.findOne({
+      doctor: doctor,
+      date: date,
+      time: time
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment time is already booked.'
       });
     }
 
@@ -251,10 +307,38 @@ app.post('/appointments/receptionist', async (req, res) => {
 
     const { patientId, doctor, date, time } = req.body;
 
+    // Check required fields
     if (!patientId || !doctor || !date || !time) {
       return res.status(400).json({
         success: false,
         message: 'Please complete all appointment fields.'
+      });
+    }
+
+    // Check if the selected date is in the past
+    const selectedDate = new Date(date + 'T00:00:00');
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a future date.'
+      });
+    }
+
+    // Check if doctor already has an appointment at this time
+    const existingAppointment = await Appointment.findOne({
+      doctor: doctor,
+      date: date,
+      time: time
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment time is already booked.'
       });
     }
 
